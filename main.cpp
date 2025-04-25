@@ -15,7 +15,7 @@ struct No
     char Marca = ' '; // marca desse estado , no caso seria o filho desse estado tera uma marca oposta
     signed char posiMarca = 0;  // seria para armazenar apenas a posição que a marca foi feita por ultimo num 4x4 seria de 0 a 15
 
-    bool estadoFinal = false;
+    char estadoJogo = ' '; // cajo seja estado final deverá ter : v ou x ou o
 
     No *pai = nullptr;
     std::vector<No *> filhos;
@@ -193,6 +193,7 @@ std::vector<std::vector<char>> recriarEstadoPorPosiSimb(const std::vector<std::v
 /**
  * estado incial pode ser um tabuleiro ja preenchido com algumas posições
  * simbolo inicial seria o simbolo X ou O que jogou nesse estado inicial 
+ * essa arvore é gerado usando logica de geração em largura com FILA
  */
 void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int posiSimbolo, char simboloInicial){
     
@@ -212,14 +213,18 @@ void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int
         No* atual = fila.front();
         fila.pop();
 
-        char estadoJogo = avaliarEstado(atual->estado);
+
+        std::vector<std::vector<char>> estadoAtual = recriarEstadoPorPosiSimb(estadoInicial, atual);
+
+        char estadoJogo = avaliarEstado(estadoAtual);
+        atual->estadoJogo = estadoJogo;
 
         if (estadoJogo != ' ') {
-            atual->estadoFinal = true;
 
             // Marcar pontuação
             if (estadoJogo == 'x') atual->pontuacao_X = 1;
             else if (estadoJogo == 'o') atual->pontuacao_O = 1;
+            // empate 'v' poderia ter uma pontuacao neutra se eu quiser
 
             continue; // estado final, não tem filhos
         }
@@ -227,12 +232,30 @@ void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int
         // Alterna a marca
         char proximoSimbolo = (atual->Marca == 'x') ? 'o' : 'x';
 
+        // gerar filhos 
+        for (int i = 0; i < 9; ++i) {
+            int linha = i / 3;
+            int coluna = i % 3;
+        
+            if (estadoAtual[linha][coluna] == ' ') {
+                No* filho = new No();
+                filho->Marca = proximoSimbolo;
+                filho->posiMarca = i;
+                filho->pai = atual;
+        
+                arvore.addFilho(atual, filho);
 
-    }
+                fila.push(filho);
+            }
+        } // fim do for que cria novos filhos
+    } // fim do while
+
+
+
 
     /*
         OK ----- função de verificação de estado 
-        primeiro deve gerar a arvore baseado na raiz,
+        OK ----- primeiro deve gerar a arvore baseado na raiz,
         depois fazer uma busca em profundidade ponderando todos os nós começando das folhas até a raiz
     */
 
