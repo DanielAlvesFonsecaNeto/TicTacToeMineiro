@@ -35,8 +35,6 @@ struct No
     ~No(); // Destrutor
 };
 
-
-
 // Construtor do No
 No::No(No *pai)
     : pai(pai) {}
@@ -48,6 +46,25 @@ No::~No()
     {
         delete filho; // Deleta recursivamente os filhos
     }
+}
+
+
+void deletaNo(No *no)
+{
+    if (no == nullptr)
+        return;
+
+    if (no->pai != nullptr)
+    {
+        auto &filhosDoPai = no->pai->filhos;
+        auto it = std::find(filhosDoPai.begin(), filhosDoPai.end(), no);
+        if (it != filhosDoPai.end())
+        {
+            filhosDoPai.erase(it);
+        }
+    }
+
+    delete no;
 }
 
 //////////////////////////---------- ~Grafo~ -------------///////////////////////////
@@ -64,25 +81,80 @@ char avaliarEstado(const std::vector<std::vector<char>> &estado)
     ' ' → jogo em andamento
     */
 
-    // Checa linhas e colunas
-    for (int i = 0; i < 3; ++i)
+    // Checa linhas para sequências de 3 iguais
+    for (int i = 0; i < 4; ++i)
     {
-        // Checa linha i
+        // Checar posições (0,1,2) da linha
         if (estado[i][0] != ' ' && estado[i][0] == estado[i][1] && estado[i][1] == estado[i][2])
             return estado[i][0];
-
-        // Checa coluna i
-        if (estado[0][i] != ' ' && estado[0][i] == estado[1][i] && estado[1][i] == estado[2][i])
-            return estado[0][i];
+        // Checar posições (1,2,3) da linha
+        if (estado[i][1] != ' ' && estado[i][1] == estado[i][2] && estado[i][2] == estado[i][3])
+            return estado[i][1];
     }
 
-    // Checa diagonal principal
-    if (estado[0][0] != ' ' && estado[0][0] == estado[1][1] && estado[1][1] == estado[2][2])
+    // Checa colunas para sequências de 3 iguais
+    for (int i = 0; i < 4; ++i)
+    {
+        // Checar posições (0,1,2) da coluna
+        if (estado[0][i] != ' ' && estado[0][i] == estado[1][i] && estado[1][i] == estado[2][i])
+            return estado[0][i];
+        // Checar posições (1,2,3) da coluna
+        if (estado[1][i] != ' ' && estado[1][i] == estado[2][i] && estado[2][i] == estado[3][i])
+            return estado[1][i];
+    }
+
+    // Checa diagonais principais para sequência de 4 iguais
+    if (estado[0][0] != ' ' && estado[0][0] == estado[1][1] && estado[1][1] == estado[2][2] && estado[2][2] == estado[3][3])
         return estado[0][0];
 
-    // Checa diagonal secundária
-    if (estado[0][2] != ' ' && estado[0][2] == estado[1][1] && estado[1][1] == estado[2][0])
+    if (estado[0][3] != ' ' && estado[0][3] == estado[1][2] && estado[1][2] == estado[2][1] && estado[2][1] == estado[3][0])
+        return estado[0][3];
+
+    // Checa diagonais espelhadas para formar 4 iguais
+
+    /*
+        3 pra 1
+        [0,0] [1,3] [2,2] [3,1]
+        [0,3] [1,0] [2,1] [3,2]
+        [0,1] [1,2] [2,3] [3,0]
+        [0,2] [1,1] [2,0] [3,3]
+
+        2 pra 2
+
+        [0,1] [1,0] [2,3] [3,2]
+        [0,2] [1,3] [2,0] [3,1]
+    */
+
+        // 3 pra 1 
+    // [0,0] [1,3] [2,2] [3,1]
+    if(estado[0][0] != ' ' && estado[0][0] == estado[1][3] && estado[1][3] == estado[2][2] && estado[2][2] == estado[3][1]){
+        return estado[0][0];
+    }
+    // [0,3] [1,0] [2,1] [3,2]
+    if(estado[0][3] != ' ' && estado[0][3] == estado[1][0] && estado[1][0] == estado[2][1] && estado[2][1] == estado[3][2]){
+        return estado[0][3];
+    }
+    // [0,1] [1,2] [2,3] [3,0]
+    if(estado[0][1] != ' ' && estado[0][1] == estado[1][2] && estado[1][2] == estado[2][3] && estado[2][3] == estado[3][0]){
+        return estado[0][1];
+    }
+    // [0,2] [1,1] [2,0] [3,3]
+    if(estado[0][2] != ' ' && estado[0][2] == estado[1][1] && estado[1][1] == estado[2][0] && estado[2][0] == estado[3][3]){
         return estado[0][2];
+    }
+
+
+
+        // 2 pra 2 
+    // [0,1] [1,0] [2,3] [3,2]
+    if(estado[0][1] != ' ' && estado[0][1] == estado[1][0] && estado[1][0] == estado[2][3] && estado[2][3] == estado[3][2]){
+        return estado[0][1];
+    }
+    // [0,2] [1,3] [2,0] [3,1]
+    if(estado[0][2] != ' ' && estado[0][2] == estado[1][3] && estado[1][3] == estado[2][0] && estado[2][0] == estado[3][1]){
+        return estado[0][2];
+    }
+
 
     // Verifica se ainda há jogadas disponíveis
     for (const auto &linha : estado)
@@ -98,6 +170,7 @@ char avaliarEstado(const std::vector<std::vector<char>> &estado)
     return 'v';
 }
 
+
 // recria todo o estado do tabuleiro tictactoe com base no nó filho e a posi do seu simbolo até chegar no pai
 std::vector<std::vector<char>> recriarEstadoPorPosiSimb(const std::vector<std::vector<char>> &estadoInicial, No *no)
 {
@@ -109,8 +182,8 @@ std::vector<std::vector<char>> recriarEstadoPorPosiSimb(const std::vector<std::v
     while (atual != nullptr)
     {
 
-        int linha = atual->posiMarca / 3;
-        int coluna = atual->posiMarca % 3;
+        int linha = atual->posiMarca / 4;
+        int coluna = atual->posiMarca % 4;
         reconstroiEstado[linha][coluna] = atual->Marca;
 
         atual = atual->pai;
@@ -230,10 +303,10 @@ void gerarArvoreDecisao(No *raiz, const std::vector<std::vector<char>> &estadoIn
         char proximoSimbolo = (atual->Marca == 'x') ? 'o' : 'x';
 
         // gerar filhos
-        for (int i = 0; i < 9; ++i)
+        for (int i = 0; i < 16; ++i)
         {
-            int linha = i / 3;
-            int coluna = i % 3;
+            int linha = i / 4;
+            int coluna = i % 4;
 
             if (estadoAtual[linha][coluna] == ' ')
             {
@@ -289,11 +362,8 @@ No *escolhaIA_x(No *noAtual)
             return filho;
         }
 
-        int valor = (filho->pontuacao_X * multiplicador_x) - (filho->pontuacao_O * multiplicador_o);
+        int valor = ((filho->pontuacao_X * multiplicador_x) + (filho->pontuacao_V * multiplicador_velha)) - (filho->pontuacao_O * multiplicador_o);
 
-        if(valor < 0){
-            valor += filho->pontuacao_V * multiplicador_velha;
-        }
 
         if (primeiro || valor > melhorValor)
         {
@@ -324,11 +394,7 @@ No *escolhaIA_o(No *noAtual)
             return filho;
         }
 
-        int valor = (filho->pontuacao_O * multiplicador_o) - (filho->pontuacao_X * multiplicador_x);
-
-        if(valor < 0){
-            valor += filho->pontuacao_V * multiplicador_velha;
-        }
+        int valor = ((filho->pontuacao_O * multiplicador_o) + (filho->pontuacao_V * multiplicador_velha)) - (filho->pontuacao_X * multiplicador_x);
 
         if (primeiro || valor > melhorValor)
         {
@@ -401,13 +467,15 @@ void IAvsIA(No *raiz, const std::vector<std::vector<char>> estadoInicial, int po
 int main()
 {
     std::vector<std::vector<char>> estadoInicial = {
-        {' ', ' ', ' '},
-        {' ', ' ', ' '},
-        {' ', ' ', ' '}};
+        {' ', ' ', ' ', 'x'},
+        {' ', ' ', 'o', ' '},
+        {' ', 'x', ' ', ' '},
+        {'o', ' ', ' ', 'o'}
+    };
 
     No *raiz = new No();
 
-    int posiInicial = 1;
+    int posiInicial = 0;
     char simboloInicial = 'x';
 
     /*
@@ -425,6 +493,8 @@ int main()
 
     IAvsIA(raiz, estadoInicial, posiInicial, simboloInicial);
     // std::cout << "estado da RAIZ : "<< raiz->estadoJogo<< "\n";
+
+    deletaNo(raiz);
 
     return 0;
 }
