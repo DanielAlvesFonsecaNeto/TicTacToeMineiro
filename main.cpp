@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <stack>
 
 //---------- Grafo -------------//
 struct No
@@ -190,12 +191,55 @@ std::vector<std::vector<char>> recriarEstadoPorPosiSimb(const std::vector<std::v
     return reconstroiEstado;
 }
 
+void avaliarPontuacoesDFS(No* raiz) {
+    if (!raiz) return;
+
+    std::stack<No*> pilha1;
+    std::stack<No*> pilha2;
+
+    pilha1.push(raiz);
+
+    // Primeira fase: gerar ordem reversa pós-ordem
+    while (!pilha1.empty()) {
+        No* atual = pilha1.top();
+        pilha1.pop();
+        pilha2.push(atual);
+
+        for (No* filho : atual->filhos) {
+            pilha1.push(filho);
+        }
+    }
+
+    // Segunda fase: processar de baixo pra cima
+    while (!pilha2.empty()) {
+        No* atual = pilha2.top();
+        pilha2.pop();
+
+        // Se for estado final, já tem pontuação
+        if (atual->estadoJogo != ' ') continue;
+
+        int somaX = 0;
+        int somaO = 0;
+
+        for (No* filho : atual->filhos) {
+            somaX += filho->pontuacao_X;
+            somaO += filho->pontuacao_O;
+        }
+
+        atual->pontuacao_X = somaX;
+        atual->pontuacao_O = somaO;
+    }
+}
+
+
 /**
  * estado incial pode ser um tabuleiro ja preenchido com algumas posições
  * simbolo inicial seria o simbolo X ou O que jogou nesse estado inicial 
  * essa arvore é gerado usando logica de geração em largura com FILA
  */
 void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int posiSimbolo, char simboloInicial){
+
+    int contador = 0;
     
     std::vector<std::vector<char>> estado = estadoInicial;
 
@@ -210,6 +254,9 @@ void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int
     fila.push(raiz);
 
     while (!fila.empty()) {
+
+        contador ++;
+
         No* atual = fila.front();
         fila.pop();
 
@@ -251,40 +298,37 @@ void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int
     } // fim do while
 
 
+    std::cout << "contador while BFS : "<< contador << "\n";
 
+    // fazendo uma DFS para pontuar toda a arvore MinMax
+    avaliarPontuacoesDFS(raiz);
 
-    /*
-        OK ----- função de verificação de estado 
-        OK ----- primeiro deve gerar a arvore baseado na raiz,
-        depois fazer uma busca em profundidade ponderando todos os nós começando das folhas até a raiz
-    */
-
+    std::cout << "contador x raiz : "<< raiz->pontuacao_X << "\n";
+    std::cout << "contador o raiz : "<< raiz->pontuacao_O << "\n";
 
 }
 
 //////////////////////////---------- ~Funções~ -------------///////////////////////////
 
 
+//---------- MAIN -------------//
 
 int main()
 {
-    std::vector<std::vector<char>> estado = {
+     // Tabuleiro inicial vazio
+     std::vector<std::vector<char>> estadoInicial = {
         {' ', ' ', ' '},
         {' ', ' ', ' '},
-        {' ', ' ', ' '}};
+        {' ', ' ', ' '}
+    };
 
-    No *raiz = new No();
-    Grafo grafo(raiz);
+    int posiInicial = 0;       // Posição 0 (primeira casa do tabuleiro)
+    char simboloInicial = 'x'; // Quem começa
 
-    std::cout << "Grafo criado com sucesso.\n";
+    gerarArvoreDecisao(estadoInicial, posiInicial, simboloInicial);
+
+    std::cout << "Arvore gerada com sucesso!\n";
+    std::cout << "A primeira jogada foi feita por '" << simboloInicial << "' na posicao " << posiInicial << ".\n";
 
     return 0;
 }
-
-// preciso dessa funções ::
-/**
- * função pra gerar estados filhos a partir do estado pai
- * função de avaliação pra dizer se o estado gerado é estado final
- * reestrturar os nós
- * 
- */
