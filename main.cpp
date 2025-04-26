@@ -16,7 +16,9 @@ struct No
     char Marca = ' '; // marca desse estado , no caso seria o filho desse estado tera uma marca oposta
     signed char posiMarca = 0;  // seria para armazenar apenas a posição que a marca foi feita por ultimo num 4x4 seria de 0 a 15
 
-    char estadoJogo = ' '; // cajo seja estado final deverá ter : v ou x ou o
+    //int posiMarca = 0;
+
+    char estadoJogo = ' '; // caso seja estado final deverá ter : v ou x ou o
 
     No *pai = nullptr;
     std::vector<No *> filhos;
@@ -102,7 +104,7 @@ void Grafo::deletaNo(No *no)
 
     if (no->pai != nullptr)
     {
-        auto &filhosDoPai = no->pai->filhos;
+        auto& filhosDoPai = no->pai->filhos;
         auto it = std::find(filhosDoPai.begin(), filhosDoPai.end(), no);
         if (it != filhosDoPai.end())
         {
@@ -135,41 +137,46 @@ Grafo::~Grafo()
 
 //---------- Funções -------------//
 
-char avaliarEstado(const std::vector<std::vector<char>>& estado){
+char avaliarEstado(const std::vector<std::vector<char>>& estado) {
     /*
-    ' ' = ninguem ganhou e não é velha
-    'x' = x ganhou           --> estado final
-    'o' = o bolinha ganhou   --> estado final
-    'v' = velha              --> estado final
-    */    
+    Retornos possíveis:
+    'x' → vitória do X
+    'o' → vitória do O
+    'v' → empate (velha)
+    ' ' → jogo em andamento
+    */
 
-    // Verifica linhas e colunas
+    // Checa linhas e colunas
     for (int i = 0; i < 3; ++i) {
-        // Linhas
+        // Checa linha i
         if (estado[i][0] != ' ' && estado[i][0] == estado[i][1] && estado[i][1] == estado[i][2])
             return estado[i][0];
-        // Colunas
+
+        // Checa coluna i
         if (estado[0][i] != ' ' && estado[0][i] == estado[1][i] && estado[1][i] == estado[2][i])
             return estado[0][i];
     }
 
-    // Diagonal principal
+    // Checa diagonal principal
     if (estado[0][0] != ' ' && estado[0][0] == estado[1][1] && estado[1][1] == estado[2][2])
         return estado[0][0];
 
-    // Diagonal secundária
+    // Checa diagonal secundária
     if (estado[0][2] != ' ' && estado[0][2] == estado[1][1] && estado[1][1] == estado[2][0])
         return estado[0][2];
 
-    // Verifica se ainda há jogadas possíveis
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            if (estado[i][j] == ' ')
+    // Verifica se ainda há jogadas disponíveis
+    for (const auto& linha : estado) {
+        for (char celula : linha) {
+            if (celula == ' ')
                 return ' '; // Jogo ainda em andamento
+        }
+    }
 
-    // Caso nenhuma condição acima seja verdadeira, é velha
+    // Se não houve vencedor e não há espaços vazios: empate
     return 'v';
 }
+
 
 // recria todo o estado do tabuleiro tictactoe com base no nó filho e a posi do seu simbolo até chegar no pai
 std::vector<std::vector<char>> recriarEstadoPorPosiSimb(const std::vector<std::vector<char>>& estadoInicial, No* no){
@@ -231,31 +238,36 @@ void avaliarPontuacoesDFS(No* raiz) {
     }
 }
 
+void certificaRaiz(No* raiz, const std::vector<std::vector<char>>& estadoInicial, int posiSimbolo, char simboloInicial){
+    raiz->Marca = simboloInicial;
+    raiz->posiMarca = posiSimbolo;
+}
+
 
 /**
  * estado incial pode ser um tabuleiro ja preenchido com algumas posições
  * simbolo inicial seria o simbolo X ou O que jogou nesse estado inicial 
  * essa arvore é gerado usando logica de geração em largura com FILA
  */
-void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int posiSimbolo, char simboloInicial){
+void gerarArvoreDecisao(No* raiz, const std::vector<std::vector<char>>& estadoInicial, int posiSimbolo, char simboloInicial){
 
-    int contador = 0;
+    int contador = 1;
     
     std::vector<std::vector<char>> estado = estadoInicial;
 
-    No *raiz = new No();
+    //No *raiz = new No();
     raiz->Marca = simboloInicial;
     raiz->posiMarca = posiSimbolo;
     
 
-    Grafo arvore(raiz);
+    //Grafo arvore(raiz); // apaga isso, deu merda por causa do destrutor dela
 
     std::queue<No*> fila;
     fila.push(raiz);
 
+
     while (!fila.empty()) {
 
-        contador ++;
 
         No* atual = fila.front();
         fila.pop();
@@ -290,9 +302,11 @@ void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int
                 filho->posiMarca = i;
                 filho->pai = atual;
         
-                arvore.addFilho(atual, filho);
+                atual->filhos.push_back(filho);
 
                 fila.push(filho);
+
+                contador ++;
             }
         } // fim do for que cria novos filhos
     } // fim do while
@@ -311,24 +325,133 @@ void gerarArvoreDecisao(const std::vector<std::vector<char>>& estadoInicial, int
 //////////////////////////---------- ~Funções~ -------------///////////////////////////
 
 
+
+//---------- Funções IAs e Jogador -------------//
+
+No* escolhaIA_x(No *noAtual){
+    if (noAtual->filhos.empty()) return nullptr;
+    No* melhorFilho = nullptr;
+
+    /*  
+        basicamente é aonde o MinMax vai atuar ,
+        ele deve escolher o filho que dê mais chances dele ganhar ou mais chances do inimigo perder
+
+            essa flag(primeiro) é pra saber se já entrou pelo menos 1 vez no for e basiar o valor inicial para encontrar o melhor
+            ela é necessaria pois o valor inicial nao pode ser 0 ja que pode ter casos em quem nenhum filho é > 0, mas ainda
+            precisariamos do melhor
+    */
+    int melhorValor = 0;
+    bool primeiro = true;
+
+    for (No* filho : noAtual->filhos) {
+        int valor = filho->pontuacao_X - filho->pontuacao_O;
+
+        if (primeiro || valor > melhorValor) {
+            melhorValor = valor;
+            melhorFilho = filho;
+            primeiro = false;
+        }
+    }
+    return melhorFilho;
+}
+
+No* escolhaIA_o(No *noAtual){
+    if (noAtual->filhos.empty()) return nullptr;
+    No* melhorFilho = nullptr;
+
+    /*  
+        mesma coisa, apenas mudei o cainho da escolha querendo pegar o pior valor para o X ,"troque o sinal de '<' no if"
+    */
+    int melhorValor = 0;
+    bool primeiro = true;
+
+    for (No* filho : noAtual->filhos) {
+        int valor = filho->pontuacao_X - filho->pontuacao_O;
+
+        if (primeiro || valor < melhorValor) {
+            melhorValor = valor;
+            melhorFilho = filho;
+            primeiro = false;
+        }
+    }
+    return melhorFilho;
+}
+
+void IAvsIA(No *raiz, const std::vector<std::vector<char>> estadoInicial, int posiInicial, char simboloInicial){
+
+    gerarArvoreDecisao(raiz, estadoInicial, posiInicial, simboloInicial);
+
+    No* atual = raiz;
+
+    std::cout << "Simulando partida IA vs IA...\n";
+
+    while (atual && atual->estadoJogo == ' ') {
+        std::vector<std::vector<char>> estadoAtual = recriarEstadoPorPosiSimb(estadoInicial, atual);
+
+        // Exibe estado atual
+        std::cout << "\nEstado atual:\n";
+        for (const auto& linha : estadoAtual) {
+            for (char c : linha) std::cout << "[" << c << "]";
+            std::cout << '\n';
+        }
+
+        // Escolhe próxima jogada com base no jogador atual
+        if (atual->Marca == 'x') {
+            atual = escolhaIA_o(atual); // O joga depois de X
+        } else {
+            atual = escolhaIA_x(atual); // X joga depois de O
+        }
+    }
+
+    std::cout << "\nResultado final: ";
+    if (!atual) std::cout << "Erro durante a simulação.\n";
+    else if (atual->estadoJogo == 'v') std::cout << "Velha!\n";
+    else std::cout << "Vencedor: " << atual->estadoJogo << "\n";
+
+    // Exibe tabuleiro final
+    if (atual) {
+        auto final = recriarEstadoPorPosiSimb(estadoInicial, atual);
+        for (const auto& linha : final) {
+            for (char c : linha) std::cout << "[" << c << "]";
+            std::cout << '\n';
+        }
+    }
+}
+
+//////////////////////////---------- ~Funções IAs e Jogador~ -------------///////////////////////////
+
+
 //---------- MAIN -------------//
 
 int main()
 {
-     // Tabuleiro inicial vazio
-     std::vector<std::vector<char>> estadoInicial = {
+    std::vector<std::vector<char>> estadoInicial = {
         {' ', ' ', ' '},
         {' ', ' ', ' '},
         {' ', ' ', ' '}
     };
 
-    int posiInicial = 0;       // Posição 0 (primeira casa do tabuleiro)
-    char simboloInicial = 'x'; // Quem começa
+    No *raiz = new No();
 
-    gerarArvoreDecisao(estadoInicial, posiInicial, simboloInicial);
+    int posiInicial = 0;
+    char simboloInicial = 'x';
 
-    std::cout << "Arvore gerada com sucesso!\n";
-    std::cout << "A primeira jogada foi feita por '" << simboloInicial << "' na posicao " << posiInicial << ".\n";
+    /*
+    // Aplica a jogada no estado inicial
+    int linha = posiInicial / 3;
+    int coluna = posiInicial % 3;
+    estadoInicial[linha][coluna] = simboloInicial;
+
+    // Também configura a raiz com essas infos!
+    raiz->Marca = simboloInicial;
+    raiz->posiMarca = posiInicial;
+*/
+    
+
+    //gerarArvoreDecisao(raiz, estadoInicial, posiInicial, simboloInicial);
+
+    IAvsIA(raiz, estadoInicial, posiInicial, simboloInicial);
+    //std::cout << "estado da RAIZ : "<< raiz->estadoJogo<< "\n";
 
     return 0;
 }
