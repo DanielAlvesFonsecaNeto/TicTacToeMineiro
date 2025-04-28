@@ -5,7 +5,6 @@
 #include <queue>
 #include <stack>
 
-
 int multiplicador_x = 10;
 int multiplicador_o = 10;
 int multiplicador_velha = 3;
@@ -43,7 +42,6 @@ No::~No()
         delete filho; // Deleta recursivamente os filhos
     }
 }
-
 
 void deletaNo(No *no)
 {
@@ -121,36 +119,39 @@ char avaliarEstado(const std::vector<std::vector<char>> &estado)
         [0,2] [1,3] [2,0] [3,1]
     */
 
-        // 3 pra 1 
+    // 3 pra 1
     // [0,0] [1,3] [2,2] [3,1]
-    if(estado[0][0] != ' ' && estado[0][0] == estado[1][3] && estado[1][3] == estado[2][2] && estado[2][2] == estado[3][1]){
+    if (estado[0][0] != ' ' && estado[0][0] == estado[1][3] && estado[1][3] == estado[2][2] && estado[2][2] == estado[3][1])
+    {
         return estado[0][0];
     }
     // [0,3] [1,0] [2,1] [3,2]
-    if(estado[0][3] != ' ' && estado[0][3] == estado[1][0] && estado[1][0] == estado[2][1] && estado[2][1] == estado[3][2]){
+    if (estado[0][3] != ' ' && estado[0][3] == estado[1][0] && estado[1][0] == estado[2][1] && estado[2][1] == estado[3][2])
+    {
         return estado[0][3];
     }
     // [0,1] [1,2] [2,3] [3,0]
-    if(estado[0][1] != ' ' && estado[0][1] == estado[1][2] && estado[1][2] == estado[2][3] && estado[2][3] == estado[3][0]){
+    if (estado[0][1] != ' ' && estado[0][1] == estado[1][2] && estado[1][2] == estado[2][3] && estado[2][3] == estado[3][0])
+    {
         return estado[0][1];
     }
     // [0,2] [1,1] [2,0] [3,3]
-    if(estado[0][2] != ' ' && estado[0][2] == estado[1][1] && estado[1][1] == estado[2][0] && estado[2][0] == estado[3][3]){
+    if (estado[0][2] != ' ' && estado[0][2] == estado[1][1] && estado[1][1] == estado[2][0] && estado[2][0] == estado[3][3])
+    {
         return estado[0][2];
     }
 
-
-
-        // 2 pra 2 
+    // 2 pra 2
     // [0,1] [1,0] [2,3] [3,2]
-    if(estado[0][1] != ' ' && estado[0][1] == estado[1][0] && estado[1][0] == estado[2][3] && estado[2][3] == estado[3][2]){
+    if (estado[0][1] != ' ' && estado[0][1] == estado[1][0] && estado[1][0] == estado[2][3] && estado[2][3] == estado[3][2])
+    {
         return estado[0][1];
     }
     // [0,2] [1,3] [2,0] [3,1]
-    if(estado[0][2] != ' ' && estado[0][2] == estado[1][3] && estado[1][3] == estado[2][0] && estado[2][0] == estado[3][1]){
+    if (estado[0][2] != ' ' && estado[0][2] == estado[1][3] && estado[1][3] == estado[2][0] && estado[2][0] == estado[3][1])
+    {
         return estado[0][2];
     }
-
 
     // Verifica se ainda há jogadas disponíveis
     for (const auto &linha : estado)
@@ -165,7 +166,6 @@ char avaliarEstado(const std::vector<std::vector<char>> &estado)
     // Se não houve vencedor e não há espaços vazios: empate
     return 'v';
 }
-
 
 // recria todo o estado do tabuleiro tictactoe com base no nó filho e a posi do seu simbolo até chegar no pai
 std::vector<std::vector<char>> recriarEstadoPorPosiSimb(const std::vector<std::vector<char>> &estadoInicial, No *no)
@@ -238,12 +238,6 @@ void avaliarPontuacoesDFS(No *raiz)
     }
 }
 
-void certificaRaiz(No *raiz, const std::vector<std::vector<char>> &estadoInicial, int posiSimbolo, char simboloInicial)
-{
-    raiz->Marca = simboloInicial;
-    raiz->posiMarca = posiSimbolo;
-}
-
 /**
  * estado incial pode ser um tabuleiro ja preenchido com algumas posições
  * simbolo inicial seria o simbolo X ou O que jogou nesse estado inicial
@@ -251,7 +245,34 @@ void certificaRaiz(No *raiz, const std::vector<std::vector<char>> &estadoInicial
  */
 void gerarArvoreDecisao(No *raiz, const std::vector<std::vector<char>> &estadoInicial, int posiSimbolo, char simboloInicial)
 {
+    // caso essa função seja chamada mais de uma vez sem querer
+    if (!raiz->filhos.empty())
+    {
+        for (No *filho : raiz->filhos)
+        {
+            deletaNo(filho);
+            raiz->estadoJogo = ' ';
+            raiz->pontuacao_O = 0;
+            raiz->pontuacao_V = 0;
+            raiz->pontuacao_X = 0;
+        }
+    }
 
+    // isso quebra o jogo e precisa prencher pra não entrar num loop , eu acho , nao testei mas imagina que entraria num loop
+    // se nao prencher
+    if (posiSimbolo < 0 || posiSimbolo > 15)
+    {
+        std::cout << "\n\n Intervalo invalido !!! FIM \n\n";
+        raiz->Marca = simboloInicial;
+        raiz->estadoJogo = 'v';
+        raiz->pontuacao_O = 1;
+        raiz->pontuacao_V = 1;
+        raiz->pontuacao_X = 1;
+        raiz->posiMarca = 0;
+        return;
+    }
+
+    // vai contar quantos Nos tem na arvore
     int contador = 1;
 
     std::vector<std::vector<char>> estado = estadoInicial;
@@ -263,6 +284,7 @@ void gerarArvoreDecisao(No *raiz, const std::vector<std::vector<char>> &estadoIn
     std::queue<No *> fila;
     fila.push(raiz);
 
+    std::cout << "\naguarde....\n";
     while (!fila.empty())
     {
 
@@ -326,7 +348,6 @@ void gerarArvoreDecisao(No *raiz, const std::vector<std::vector<char>> &estadoIn
 
 //---------- Funções IAs e Jogador -------------//
 
-
 No *escolhaIA_x(No *noAtual)
 {
     if (noAtual->filhos.empty())
@@ -346,12 +367,12 @@ No *escolhaIA_x(No *noAtual)
 
     for (No *filho : noAtual->filhos)
     {
-        if(filho->estadoJogo == 'x'){
+        if (filho->estadoJogo == 'x')
+        {
             return filho;
         }
 
         int valor = ((filho->pontuacao_X * multiplicador_x) + (filho->pontuacao_V * multiplicador_velha)) - (filho->pontuacao_O * multiplicador_o);
-
 
         if (primeiro || valor > melhorValor)
         {
@@ -378,7 +399,8 @@ No *escolhaIA_o(No *noAtual)
 
     for (No *filho : noAtual->filhos)
     {
-        if(filho->estadoJogo == 'o'){
+        if (filho->estadoJogo == 'o')
+        {
             return filho;
         }
 
@@ -397,7 +419,10 @@ No *escolhaIA_o(No *noAtual)
 void IAvsIA(No *raiz, const std::vector<std::vector<char>> estadoInicial, int posiInicial, char simboloInicial)
 {
 
-    gerarArvoreDecisao(raiz, estadoInicial, posiInicial, simboloInicial);
+    if (raiz->filhos.empty())
+    {
+        gerarArvoreDecisao(raiz, estadoInicial, posiInicial, simboloInicial);
+    }
 
     No *atual = raiz;
 
@@ -448,6 +473,156 @@ void IAvsIA(No *raiz, const std::vector<std::vector<char>> estadoInicial, int po
     }
 }
 
+No *jogadorEscolhe(No *noAtual, const std::vector<std::vector<char>> estadoInicial, char Simbolo)
+{
+
+    No *escolha = nullptr;
+    int Posicao;
+
+    do
+    {
+        std::cout << "Escolha posicao : ";
+        std::cin >> Posicao;
+        fflush(stdin);
+        for (No *filho : noAtual->filhos)
+        {
+            std::cout << "posi: " << filho->posiMarca << "\n";
+            if (filho->posiMarca == Posicao)
+            {
+
+                return filho;
+            }
+        }
+        // caso não tenha encontrado
+        std::cout << "\n Posicao Invalidas!!! \n";
+    } while (1);
+
+    // // Exibe estado atual
+
+    // escolha = jogadorEscolhe(noAtual, estadoInicial, Simbolo);
+
+    return escolha;
+}
+
+void JogadorVsIa(No *raiz, const std::vector<std::vector<char>> estadoInicial, int posiInicial, char simboloInicial, bool JogadorPrimeiro)
+{
+
+    char simboloJogador;
+    char simboloIA;
+
+    bool VezJogador = true;
+
+    std::cout << "Player VS IA \n\n";
+
+    if (JogadorPrimeiro)
+    {
+        int Posicao;
+        // Exibe estado atual
+        std::cout << "\nEstado atual:\n";
+        for (const auto &linha : estadoInicial)
+        {
+            for (char c : linha)
+                std::cout << "[" << c << "]";
+            std::cout << '\n';
+        }
+
+        do
+        {
+            std::cout << "Escolha posicao : ";
+            std::cin >> Posicao;
+        } while (Posicao < 0 || Posicao > 15);
+
+        std::cout << "ssssss";
+
+        gerarArvoreDecisao(raiz, estadoInicial, Posicao, simboloInicial);
+
+        VezJogador = false;
+        simboloJogador = simboloInicial;
+        if (simboloJogador == 'x')
+        {
+            simboloIA = 'o';
+        }
+        else
+        {
+            simboloIA = 'x';
+        }
+    }
+    else
+    {
+        // caso a arvore ainda não tenha sido criada
+        if (raiz->filhos.empty())
+        {
+            gerarArvoreDecisao(raiz, estadoInicial, posiInicial, simboloInicial);
+            No *atual = raiz;
+        }
+        simboloIA = simboloInicial;
+        if (simboloIA == 'x')
+        {
+            simboloJogador = 'o';
+        }
+        else
+        {
+            simboloJogador = 'x';
+        }
+    }
+
+    No *atual = raiz;
+
+    while (atual && atual->estadoJogo == ' ')
+    {
+        std::cout << "zzzzzz";
+        std::vector<std::vector<char>> estadoAtual = recriarEstadoPorPosiSimb(estadoInicial, atual);
+
+        // Exibe estado atual
+        std::cout << "\nEstado atual:\n";
+        for (const auto &linha : estadoAtual)
+        {
+            for (char c : linha)
+                std::cout << "[" << c << "]";
+            std::cout << '\n';
+        }
+
+        if (VezJogador)
+        {
+            atual = jogadorEscolhe(atual, estadoInicial, simboloJogador);
+            VezJogador = false;
+        }
+        else
+        {
+            // Escolhe próxima jogada com base no jogador atual
+            if (simboloIA == 'o')
+            {
+                atual = escolhaIA_o(atual); // O joga depois de X
+            }
+            else
+            {
+                atual = escolhaIA_x(atual); // X joga depois de O
+            }
+            VezJogador = true;
+        }
+    }
+
+    std::cout << "\nResultado final: ";
+    if (!atual)
+        std::cout << "Erro durante a simulação.\n";
+    else if (atual->estadoJogo == 'v')
+        std::cout << "Velha!\n";
+    else
+        std::cout << "Vencedor: " << atual->estadoJogo << "\n";
+
+    // Exibe tabuleiro final
+    if (atual)
+    {
+        auto final = recriarEstadoPorPosiSimb(estadoInicial, atual);
+        for (const auto &linha : final)
+        {
+            for (char c : linha)
+                std::cout << "[" << c << "]";
+            std::cout << '\n';
+        }
+    }
+}
+
 //////////////////////////---------- ~Funções IAs e Jogador~ -------------///////////////////////////
 
 //---------- MAIN -------------//
@@ -458,17 +633,25 @@ int main()
         {' ', ' ', ' ', ' '},
         {' ', 'o', 'x', ' '},
         {' ', 'x', 'o', ' '},
-        {' ', ' ', ' ', ' '}
-    };
+        {' ', ' ', ' ', ' '}};
 
     No *raiz = new No();
 
     int posiInicial = 0;
     char simboloInicial = 'x';
 
+    // gerarArvoreDecisao(raiz, estadoInicial, posiInicial, simboloInicial);
 
-    IAvsIA(raiz, estadoInicial, posiInicial, simboloInicial);
+    // int Posicao;
+    // std::cout << "Escolha posicao : ";
+    // std::cin >> Posicao;
 
+    // gerarArvoreDecisao(raiz, estadoInicial, Posicao, simboloInicial);
+
+    // IAvsIA(raiz, estadoInicial, posiInicial, simboloInicial);
+    // IAvsIA(raiz, estadoInicial, posiInicial, simboloInicial);
+
+    JogadorVsIa(raiz, estadoInicial, posiInicial, simboloInicial, true);
 
     deletaNo(raiz);
 
