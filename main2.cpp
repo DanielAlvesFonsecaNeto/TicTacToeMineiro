@@ -4,25 +4,21 @@
 #include <vector>
 #include <queue>
 #include <stack>
-#include <climits> // acho que nao usei
+
 
 int multiplicador_x = 10;
 int multiplicador_o = 10;
-int multiplicador_velha = 10;
+int multiplicador_velha = 3;
 
 //---------- Grafo -------------//
 struct No
 {
-    // std::vector<std::vector<char>> estado;
-
     int pontuacao_O = 0;
     int pontuacao_X = 0;
     int pontuacao_V = 0;
 
     char Marca = ' ';          // marca desse estado , no caso seria o filho desse estado tera uma marca oposta
     signed char posiMarca = 0; // seria para armazenar apenas a posição que a marca foi feita por ultimo num 4x4 seria de 0 a 15
-
-    // int posiMarca = 0;
 
     char estadoJogo = ' '; // caso seja estado final deverá ter : v ou x ou o
 
@@ -110,7 +106,7 @@ char avaliarEstado(const std::vector<std::vector<char>> &estado)
     if (estado[0][3] != ' ' && estado[0][3] == estado[1][2] && estado[1][2] == estado[2][1] && estado[2][1] == estado[3][0])
         return estado[0][3];
 
-    // Checa diagonais espelhadas para formar 4 iguais
+    // Checa diagonais paralelas para formar 4 iguais
 
     /*
         3 pra 1
@@ -264,8 +260,6 @@ void gerarArvoreDecisao(No *raiz, const std::vector<std::vector<char>> &estadoIn
     raiz->Marca = simboloInicial;
     raiz->posiMarca = posiSimbolo;
 
-    // Grafo arvore(raiz); // apaga isso, deu merda por causa do destrutor dela
-
     std::queue<No *> fila;
     fila.push(raiz);
 
@@ -282,12 +276,6 @@ void gerarArvoreDecisao(No *raiz, const std::vector<std::vector<char>> &estadoIn
 
         if (estadoJogo != ' ')
         {
-            /*
-            // Marcar pontuação
-            if (estadoJogo == 'x') atual->pontuacao_X = 1;
-            else if (estadoJogo == 'o') atual->pontuacao_O = 1;
-            // empate 'v' poderia ter uma pontuacao neutra se eu quiser
-            */
             if (estadoJogo == 'x')
                 atual->pontuacao_X = 1;
             else if (estadoJogo == 'o')
@@ -467,10 +455,10 @@ void IAvsIA(No *raiz, const std::vector<std::vector<char>> estadoInicial, int po
 int main()
 {
     std::vector<std::vector<char>> estadoInicial = {
-        {' ', ' ', ' ', 'x'},
-        {' ', ' ', 'o', ' '},
-        {' ', 'x', ' ', ' '},
-        {'o', ' ', ' ', 'o'}
+        {' ', ' ', ' ', ' '},
+        {' ', 'o', 'x', ' '},
+        {' ', 'x', 'o', ' '},
+        {' ', ' ', ' ', ' '}
     };
 
     No *raiz = new No();
@@ -478,21 +466,9 @@ int main()
     int posiInicial = 0;
     char simboloInicial = 'x';
 
-    /*
-    // Aplica a jogada no estado inicial
-    int linha = posiInicial / 3;
-    int coluna = posiInicial % 3;
-    estadoInicial[linha][coluna] = simboloInicial;
-
-    // Também configura a raiz com essas infos!
-    raiz->Marca = simboloInicial;
-    raiz->posiMarca = posiInicial;
-*/
-
-    // gerarArvoreDecisao(raiz, estadoInicial, posiInicial, simboloInicial);
 
     IAvsIA(raiz, estadoInicial, posiInicial, simboloInicial);
-    // std::cout << "estado da RAIZ : "<< raiz->estadoJogo<< "\n";
+
 
     deletaNo(raiz);
 
