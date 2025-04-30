@@ -486,20 +486,14 @@ No *jogadorEscolhe(No *noAtual, const std::vector<std::vector<char>> estadoInici
         fflush(stdin);
         for (No *filho : noAtual->filhos)
         {
-            std::cout << "posi: " << filho->posiMarca << "\n";
             if (filho->posiMarca == Posicao)
             {
-
                 return filho;
             }
         }
         // caso não tenha encontrado
         std::cout << "\n Posicao Invalidas!!! \n";
     } while (1);
-
-    // // Exibe estado atual
-
-    // escolha = jogadorEscolhe(noAtual, estadoInicial, Simbolo);
 
     return escolha;
 }
@@ -642,13 +636,6 @@ int main()
 
     // gerarArvoreDecisao(raiz, estadoInicial, posiInicial, simboloInicial);
 
-    // int Posicao;
-    // std::cout << "Escolha posicao : ";
-    // std::cin >> Posicao;
-
-    // gerarArvoreDecisao(raiz, estadoInicial, Posicao, simboloInicial);
-
-    // IAvsIA(raiz, estadoInicial, posiInicial, simboloInicial);
     // IAvsIA(raiz, estadoInicial, posiInicial, simboloInicial);
 
     JogadorVsIa(raiz, estadoInicial, posiInicial, simboloInicial, true);
